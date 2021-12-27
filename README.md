@@ -15,7 +15,7 @@ we support multiple other usages of Cr5 model. In summary, usages include:
 ## Dependencies
 The library depends on the following python packages:
 - ```numpy```, for performing vector operations
--```nltk```, for tokenizing documents
+- ```nltk```, for tokenizing documents
 - ```faiss```, for creating indexes and searching in the indexes
 
 If you want to run with the "off-line" mode without loading the Cr5 models in memory, both ```LevelDB``` and the python package ```plyvel``` are required.
