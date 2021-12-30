@@ -380,7 +380,8 @@ class Cr5Model:
                                          document: str,
                                          src_lang: str,
                                          dst_lang: str,
-                                         normalize: bool = True) -> Tuple[List[Tuple[str, str]], int]:
+                                         normalize: bool = True,
+                                         result_size: int = 10) -> Tuple[List[Tuple[str, str]], int]:
         """
         Given a document of `src_lang`, search in the on disk document space of language `dst_lang`,
         and return the top results.
@@ -388,6 +389,7 @@ class Cr5Model:
         :param src_lang: The language of the document.
         :param dst_lang: The language of the document to search for.
         :param normalize: Whether to normalize the document based on l-2 norm.
+        :param result_size: The number of matched results to return
         :return: A tuple of search results and the size of search space.
                 Inside the search results:
                             there is a list of tuples representing top matches.
@@ -421,7 +423,7 @@ class Cr5Model:
         index.nprobe = SEARCH_INDEX_NPROBE
         query = normalize_vector(self.get_document_embedding(document, src_lang)) \
             if normalize else self.get_document_embedding(document, src_lang)
-        _, ids = index.search(query.reshape(1, -1), SEARCH_RESULT_SIZE)
+        _, ids = index.search(query.reshape(1, -1), min(size, result_size, MAX_SEARCH_RESULT_SIZE))
 
         # In order to return meaning for information of these documents,
         # we need to retrieve the metadata of these documents with level db, in folder:
@@ -443,7 +445,8 @@ class Cr5Model:
                                            document: str,
                                            src_lang: str,
                                            dst_lang: str,
-                                           normalize: bool = True) -> Tuple[List[Tuple[str, str]], int]:
+                                           normalize: bool = True,
+                                           result_size: int = 10) -> Tuple[List[Tuple[str, str]], int]:
         """
         Given a document of `src_lang`, search in the in memory document space of language `dst_lang`,
         and return the top results.
@@ -451,6 +454,7 @@ class Cr5Model:
         :param src_lang: The language of the document.
         :param dst_lang: The language of the document to search for.
         :param normalize: Whether to normalize the document based on l-2 norm.
+        :param result_size: The number of matched results to return
         :return: A tuple of search results and the size of search space.
                 Inside the search results:
                             there is a list of tuples representing top matches.
@@ -471,8 +475,11 @@ class Cr5Model:
         # We perform in memory search here with:
         #       - `self.in_memory_index[dst_lang]`
         #       - `self.in_memory_keys[dst_lang]`
-        _, ids = self.in_memory_index[dst_lang].search(query.reshape(1, -1), SEARCH_RESULT_SIZE)
         size = self.in_memory_index[dst_lang].ntotal
+        _, ids = self.in_memory_index[dst_lang].search(
+            query.reshape(1, -1),
+            min(size, result_size, MAX_SEARCH_RESULT_SIZE),
+        )
         document_titles = []
         for _id in ids.flatten():
             title = self.in_memory_keys[dst_lang][_id].split(DOCUMENT_LINE_SEPARATORS)

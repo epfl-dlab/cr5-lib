@@ -19,7 +19,7 @@ SEARCH_INDEX_IN_MEMORY_TYPE = 'Flat'
 
 # The parameters to be used when performing the search
 SEARCH_INDEX_NPROBE = 32
-SEARCH_RESULT_SIZE = 5
+MAX_SEARCH_RESULT_SIZE = 100
 
 # The directory names inside each model's level db path
 LEVEL_DB_DOCUMENT_ID_DIR = 'ids'
