@@ -1,12 +1,11 @@
 # Cr5 Library
 
-This project implements a memory efficient Cr5 library. [Cr5](https://github.com/epfl-dlab/Cr5) provides cross-lingual document embedding and typically, it can support embedding documents from up to 28 different languages into a common vector space.
+This project implements a memory efficient Cr5 library. [Cr5](https://github.com/epfl-dlab/Cr5) provides cross-lingual document embedding and typically, it supports embedding documents from up to 28 different languages into a common vector space.
 
-In addition to the basic usage of Cr5 model, which is to get a document embedding,
-we support multiple other usages of Cr5 model. In summary, usages include:
+In addition to the basic usage of Cr5 model, which is to get a document embedding, we support multiple other usages of Cr5 model. In summary, usages include:
 - Get a document embedding, based on the model name and the language.
 - Store Cr5 models into a local database instance. In our case, we use [LevelDB](https://github.com/google/leveldb). This allows the user to use Cr5 models in an "off-line" mode, without the need to load model files in memory.
-- Create search indexes for a corpus of documents. Thus, the user can find out the most similar document in the corpus given a query document. Cr5 supports two flavors, either on-disk or in-memory. In both cases, Cr5 uses [faiss](https://github.com/facebookresearch/faiss).
+- Create search indexes for a corpus of documents. Thus, the user can find out the most similar document in the corpus given a query document. Cr5 supports two flavors of such search indexes, either on-disk or in-memory. In both cases, Cr5 uses [faiss](https://github.com/facebookresearch/faiss).
   - On-disk indexes help reduce the memory usage when searching for similar vectors in the search space. In addition, on-disk indexes uses inverted file (IVF) which performs approximate search.
   - In-memory indexes return the exact results. However, using in-memory indexes will consume much memory space, given that the corpus is huge.
 - Search with indexes. Likewise, searching supports both in-memory mode and on-disk mode. With the on-disk indexes, searching in huge search space costs relatively minimal memory usage.
@@ -20,12 +19,28 @@ The library depends on the following python packages:
 
 If you want to run with the "off-line" mode without loading the Cr5 models in memory, both ```LevelDB``` and the python package ```plyvel``` are required.
 
+To create the environment named `cr5` and install the dependencies, run the script below:
+
+```bash
+conda create -n cr5 python=3.6 -y
+conda activate cr5
+
+pip install numpy nltk
+python -c "import nltk; nltk.download('punkt')"
+
+# If you have LevelDB installed, proceed with installing plyvel
+pip install plyvel
+
+# The official way to install faiss
+# Installing via pip is not recommended due to obsolete versions
+conda install -c pytorch faiss-cpu -y
+```
+
 ## Installation
 To install the library, simply use:
 ```bash
 pip install "git+https://github.com/epfl-dlab/cr5-lib"
 ```
-Alternatively, you can use the docker image built from `Dockerfile`. See section Preview Environment.
 
 ## Example Usage
 ```python
@@ -66,21 +81,20 @@ model.create_search_indexes_on_disk(
     document_language='language_of_the_corpus',
 )
 
-# Creating an in-memory index is similar
-model.create_index_in_memory(
-    document_path='/path/to/some/huge/corpus',
-    document_language='language_of_the_corpus',
-)
-
-
 # Now let's search for the most similar documents in the corpus
-# It can work either in-memory or on-disk
 top_matches, size_of_documents_in_corpus = model.search_similar_documents_on_disk(
     document="Some document to search for",
     src_lang="language_of_the_document_to_search",
     dst_lang="target_language_to_search",
 )
 
+# Creating an in-memory index is similar
+model.create_index_in_memory(
+    document_path='/path/to/some/huge/corpus',
+    document_language='language_of_the_corpus',
+)
+
+# Searching in-memory index is similar
 top_matches, size_of_documents_in_corpus = model.search_similar_documents_in_memory(
     document="Some document to search for",
     src_lang="language_of_the_document_to_search",
@@ -90,7 +104,7 @@ top_matches, size_of_documents_in_corpus = model.search_similar_documents_in_mem
 
 ## Data Storage
 The Cr5 Library depends on three directories.
-- ```model_dir```: The path to the original [Cr5 model file](https://zenodo.org/record/2597441#.Yco3xRPMJhE).
+- ```model_dir```: The path to the original [Cr5 model file](https://zenodo.org/record/2597441#.Yco3xRPMJhE). This is needed when storing models as LevelDB files or running the model in-memory.
 - ```level_db_dir```: The path to store and read LevelDB files.
 - ```search_indexes_dir```: The path to store and read faiss search indexes.
 
@@ -113,7 +127,7 @@ A typical and recommended layout would be:
         └── search_indexes                <- The directory which stores on-disk search indexes
             ├──joint_4                    <- Search indexes created using model `joint_4`
             │    ├──en                    <- Indexes for English corpus
-            │    ├──fr
+            │    ├──it
             │    └──...
             └──joint_28
                  ├──en
@@ -121,6 +135,3 @@ A typical and recommended layout would be:
                  └──...
 
 ------------
-
-## Preview Environment (TODO)
-We provide a Docker environment which includes all the dependencies.
