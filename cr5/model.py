@@ -321,11 +321,11 @@ class Cr5Model:
             for i, v in enumerate(document_keys):
                 wb.put(str(i).encode(), v.encode())
 
-    def create_index_in_memory(self,
-                               document_path: str,
-                               document_language: str,
-                               in_memory_model: bool = True,
-                               normalize: bool = True):
+    def create_search_indexes_in_memory(self,
+                                        document_path: str,
+                                        document_language: str,
+                                        in_memory_model: bool = True,
+                                        normalize: bool = True):
         """
         Given the path to a file containing a collection of documents, create the search index based on the file for
         similarity search.

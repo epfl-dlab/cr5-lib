@@ -89,7 +89,7 @@ top_matches, size_of_documents_in_corpus = model.search_similar_documents_on_dis
 )
 
 # Creating an in-memory index is similar
-model.create_index_in_memory(
+model.create_search_indexes_in_memory(
     document_path='/path/to/some/huge/corpus',
     document_language='language_of_the_corpus',
 )
