@@ -102,6 +102,40 @@ top_matches, size_of_documents_in_corpus = model.search_similar_documents_in_mem
 )
 ```
 
+## Conversion to Database Records
+The Cr5 Library reaches an efficient memory usage by utilizing the external database service to look up embeddings of tokens. Since the query itself is simple, we use a simple on-disk key-value storage: `LevelDB`.
+
+The conversion is transparent to the user and is done by the call to the method `store_model_in_db(lang)`.
+
+Under the hood, the conversion creates an entry per token:
+- Key: the token itself, encoded in bytes
+- Value: the serialized `numpy` array
+
+For example, the original [Cr5 model file](https://zenodo.org/record/2597441#.Yco3xRPMJhE) uses a line to represent the token and its corresponding embedding, separated by the space. Each embedding has 300 dimensions. To convert the model to database records,
+```python
+# Create the database at some path
+db = plyvel.DB(some_path, create_if_missing=True)
+# Create a specific prefixed database for the English language
+pf_db = db.prefixed_db('en'.encode())
+with pf_db.write_batch() as wb:
+    # Open the original model file
+    with gzip.open(model_path, mode='rt', encoding='utf-8') as file:
+        for line in file:
+            parts = line.split(' ')
+            # The token itself
+            word = ' '.join(parts[:-300])
+            # Here we store it in LevelDB
+            wb.put(word.encode(), np.array(parts[-300:]).tobytes())
+```
+
+To read from `LevelDB`,
+```python
+# Get the serialized numpy bytes of a given token
+value = db.get(word.encode())
+# Restore it to a numpy array
+vector = np.frombuffer(value, dtype=np.float32)
+```
+
 ## Data Storage
 The Cr5 Library depends on three directories.
 - ```model_dir```: The path to the original [Cr5 model file](https://zenodo.org/record/2597441#.Yco3xRPMJhE). This is needed when storing models as LevelDB files or running the model in-memory.
